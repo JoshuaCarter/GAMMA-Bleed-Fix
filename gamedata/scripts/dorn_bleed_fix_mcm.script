@@ -45,18 +45,12 @@ function on_mcm_load()
 			{
 				id = "development",
 				sh = true,
-				text = "Development",
 				gr = {
 					{
-						id = "preview_description",
-						type = "desc",
-						text = "ui_mcm_dorn_bleed_fix_preview_description",
-					},
-					{
-						id = "preview_spike_key",
+						id = "preview_bleed_key",
 						type = "key_bind",
 						val = 2,
-						hint = "dorn_bleed_fix_preview_spike_key",
+						hint = "dorn_bleed_fix_preview_bleed_key",
 					},
 					{
 						id = "preview_bleeding_key",
@@ -70,7 +64,6 @@ function on_mcm_load()
 						val = 2,
 						hint = "dorn_bleed_fix_add_bleed_key",
 					},
-					{ id = "line_debug", type = "line" },
 					{
 						id = "debug_log",
 						type = "check",

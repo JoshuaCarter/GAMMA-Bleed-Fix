@@ -28,16 +28,17 @@ local CONFIG = {
 }
 
 local LOG = {
-	LIFECYCLE 	= { order = 0, color = _G.dorn_dbg.COLORS.gray },
-	BLEED    	= { order = 1, color = _G.dorn_dbg.COLORS.red },
-	BLEED_LVL 	= { order = 2, color = _G.dorn_dbg.COLORS.orange },
-	EVENT     	= { order = 3, color = _G.dorn_dbg.COLORS.yellow },
+	LIFECYCLE = { order = 0, color = "gray" },
+	BLEED     = { order = 1, color = "red" },
+	BLEED_LVL = { order = 2, color = "orange" },
+	EVENT     = { order = 3, color = "yellow" },
 }
 
 local function log(log_type, msg)
 	if _G.dorn_dbg and CONFIG.debug_log then
 		local slot = log_type or LOG.EVENT
-		_G.dorn_dbg.write(MOD_ID, slot.order, "[BleedFix] " .. tostring(msg), slot.color)
+		local colors = _G.dorn_dbg.COLORS
+		_G.dorn_dbg.write(MOD_ID, slot.order, "[BleedFix] " .. tostring(msg), colors and colors[slot.color])
 	end
 end
 
@@ -111,15 +112,13 @@ local function on_actor_on_update()
 	if bleeding_fx_active and lvl < 1 then
 		bleeding_fx_active = false
 		level.remove_pp_effector(PP_BLEEDING_ID)
-	elseif not bleeding_fx_active and lvl > 0 then
-		bleeding_fx_active = true
-
-		-- play bleeding effect
+	elseif lvl > 0 then
+		if not bleeding_fx_active then
+			bleeding_fx_active = true
+			level.add_pp_effector("dorn_bleeding.ppe", PP_BLEEDING_ID, true)
+		end
 		local base_intensity = math.max(0, math.min(internal_bleed / BLEED_MAX, 1))
-		local final_intensity = base_intensity *  CONFIG.bleeding_intensity_scale
-
-		level.add_pp_effector("dorn_bleeding.ppe", PP_BLEEDING_ID, true)
-		level.set_pp_effector_factor(PP_BLEEDING_ID, final_intensity)
+		level.set_pp_effector_factor(PP_BLEEDING_ID, base_intensity * CONFIG.bleeding_intensity_scale)
 	end
 end
 
@@ -138,6 +137,7 @@ local function on_option_change()
 		CONFIG.bleeding_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleeding_intensity_scale", 1)
 		CONFIG.sfx_on_bleed_up = _G.dorn_mcm.bool(MOD_ID, "main/sfx_on_bleed_up", true)
 		CONFIG.preview_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleed_key")
+			or _G.dorn_mcm.key(MOD_ID, "development/preview_spike_key")
 		CONFIG.preview_bleeding_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleeding_key")
 		CONFIG.add_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/add_bleed_key")
 	end
