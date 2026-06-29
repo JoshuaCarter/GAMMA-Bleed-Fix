@@ -5,7 +5,7 @@
 	- Smoothed internal bleed drives 0-1 PPE intensity for both effects
 ]]
 
-local id = "dorn_bleed_fix"
+local MOD_ID = "dorn_bleed_fix"
 local PP_BLEED_ID = 22100
 local PP_BLEEDING_ID = 22101
 local PP_BLEED_DBG_ID = 22102
@@ -16,33 +16,34 @@ local BLEED_ADD_RATE = BLEED_TIER_STEP
 local BLEED_SPEED_K = 0.88
 local DEBUG_BLEED_BONE = 0
 
-_G.dorn_bleed_fix = _G.dorn_bleed_fix or {}
-local dorn_bleed_fix = _G.dorn_bleed_fix
-
 local last_bleed_lvl = 0
 local internal_bleed = 0
 local sustain_active = false
-local preview_spike_key = nil
-local preview_bleeding_key = nil
-local add_bleed_key = nil
 local add_bleed_log_tg = 0
 local debug_hud_tg = 0
 local snd_bleed = nil
 
-local LOG = {
-	LIFECYCLE = { order = 0, color = _G.dorn_dbg.COLORS.gray },
-	STATUS    = { order = 1, color = _G.dorn_dbg.COLORS.red },
-	EVENT     = { order = 2, color = _G.dorn_dbg.COLORS.yellow },
+local CONFIG = {
+	debug_log = false,
+	bleed_intensity_scale = 1,
+	bleeding_intensity_scale = 1,
+	sfx_on_bleed_up = true,
+	preview_spike_key = nil,
+	preview_bleeding_key = nil,
+	add_bleed_key = nil,
 }
 
-local function debug_enabled()
-	return _G.dorn_mcm and _G.dorn_mcm.bool(id, "development/debug_log", false)
-end
+local LOG = {
+	LIFECYCLE = { order = 0, color = _G.dorn_dbg.COLORS.gray },
+	BLEED    = { order = 1, color = _G.dorn_dbg.COLORS.red },
+	BLEED_LVL    = { order = 2, color = _G.dorn_dbg.COLORS.orange },
+	EVENT     = { order = 3, color = _G.dorn_dbg.COLORS.yellow },
+}
 
 local function log(log_type, msg)
 	if _G.dorn_dbg then
 		local slot = log_type or LOG.EVENT
-		_G.dorn_dbg.write(id, slot.order, "[BleedFix] " .. tostring(msg), slot.color)
+		_G.dorn_dbg.write(MOD_ID, slot.order, "[BleedFix] " .. tostring(msg), slot.color)
 	end
 end
 
@@ -62,17 +63,6 @@ local function get_bleed_lvl(bleeding)
 	return 1
 end
 
-local function mcm_scale(key)
-	if _G.dorn_mcm then
-		return _G.dorn_mcm.number(id, "main/" .. key, 1)
-	end
-	return 1
-end
-
-local function sfx_enabled()
-	return not _G.dorn_mcm or _G.dorn_mcm.bool(id, "main/sfx_on_bleed_up", true)
-end
-
 local function bleed_intensity_01()
 	local intensity = internal_bleed / BLEED_MAX
 	if intensity > 1 then
@@ -85,7 +75,10 @@ local function bleed_intensity_01()
 end
 
 local function ppe_factor(scale_key)
-	local factor = bleed_intensity_01() * mcm_scale(scale_key)
+	local scale = scale_key == "bleeding_intensity_scale"
+		and CONFIG.bleeding_intensity_scale
+		or CONFIG.bleed_intensity_scale
+	local factor = bleed_intensity_01() * scale
 	if factor > 1 then
 		factor = 1
 	end
@@ -110,10 +103,10 @@ local function update_internal_bleed(target, dt_ms)
 end
 
 local function is_add_bleed_held()
-	if not add_bleed_key then
+	if not CONFIG.add_bleed_key then
 		return false
 	end
-	return (key_state(add_bleed_key) or 0) ~= 0
+	return (key_state(CONFIG.add_bleed_key) or 0) ~= 0
 end
 
 local function apply_debug_bleed(actor, dt)
@@ -132,35 +125,35 @@ local function apply_debug_bleed(actor, dt)
 end
 
 local function play_bleed_sfx()
-	if not sfx_enabled() or not snd_bleed or not db.actor then
+	if not CONFIG.sfx_on_bleed_up or not snd_bleed or not db.actor then
 		return
 	end
 	snd_bleed:play_no_feedback(db.actor, sound_object.s2d, 0, VEC_ZERO, 1.0, 1.0)
 end
 
-function dorn_bleed_fix.preview_bleed()
+local function preview_bleed()
 	if not db.actor then
 		return
 	end
-	local factor = mcm_scale("bleed_intensity_scale")
+	local factor = CONFIG.bleed_intensity_scale
 	level.remove_pp_effector(PP_BLEED_DBG_ID)
 	level.add_pp_effector("dorn_bleed.ppe", PP_BLEED_DBG_ID, false)
 	level.set_pp_effector_factor(PP_BLEED_DBG_ID, factor)
 	log(LOG.EVENT, "preview_bleed")
 end
 
-function dorn_bleed_fix.preview_bleeding()
+local function preview_bleeding()
 	if not db.actor then
 		return
 	end
-	local factor = mcm_scale("bleeding_intensity_scale")
+	local factor = CONFIG.bleeding_intensity_scale
 	level.remove_pp_effector(PP_BLEEDING_DBG_ID)
 	level.add_pp_effector("dorn_bleeding.ppe", PP_BLEEDING_DBG_ID, false)
 	level.set_pp_effector_factor(PP_BLEEDING_DBG_ID, factor)
 	log(LOG.EVENT, "preview_bleeding")
 end
 
-function dorn_bleed_fix.play_bleed(factor)
+local function play_bleed(factor)
 	if not db.actor then
 		return
 	end
@@ -168,17 +161,6 @@ function dorn_bleed_fix.play_bleed(factor)
 	level.add_pp_effector("dorn_bleed.ppe", PP_BLEED_ID, false)
 	level.set_pp_effector_factor(PP_BLEED_ID, factor or ppe_factor("bleed_intensity_scale"))
 	log(LOG.EVENT, "play_bleed")
-end
-
-function dorn_bleed_fix.play_bleeding(factor)
-	if not db.actor then
-		return
-	end
-	level.remove_pp_effector(PP_BLEEDING_ID)
-	level.add_pp_effector("dorn_bleeding.ppe", PP_BLEEDING_ID, false)
-	sustain_active = false
-	level.set_pp_effector_factor(PP_BLEEDING_ID, factor or ppe_factor("bleeding_intensity_scale"))
-	log(LOG.EVENT, "play_bleeding")
 end
 
 local function stop_sustain()
@@ -202,31 +184,22 @@ local function update_sustain(bleeding)
 	level.set_pp_effector_factor(PP_BLEEDING_ID, ppe_factor("bleeding_intensity_scale"))
 end
 
-local function sync_debug()
+local function on_option_change()
+	if _G.dorn_mcm then
+		CONFIG.debug_log = _G.dorn_mcm.bool(MOD_ID, "development/debug_log", false)
+		CONFIG.bleed_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleed_intensity_scale", 1)
+		CONFIG.bleeding_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleeding_intensity_scale", 1)
+		CONFIG.sfx_on_bleed_up = _G.dorn_mcm.bool(MOD_ID, "main/sfx_on_bleed_up", true)
+		CONFIG.preview_spike_key = _G.dorn_mcm.key(MOD_ID, "development/preview_spike_key")
+		CONFIG.preview_bleeding_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleeding_key")
+		CONFIG.add_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/add_bleed_key")
+	end
 	if _G.dorn_dbg then
-		_G.dorn_dbg.set_enabled(id, debug_enabled())
+		_G.dorn_dbg.set_enabled(MOD_ID, CONFIG.debug_log)
 	end
 end
 
-local function sync_keys()
-	if not ui_mcm then
-		return
-	end
-	preview_spike_key = ui_mcm.get(id .. "/development/preview_spike_key")
-	if preview_spike_key == DIK_keys.DIK_ESCAPE then
-		preview_spike_key = nil
-	end
-	preview_bleeding_key = ui_mcm.get(id .. "/development/preview_bleeding_key")
-	if preview_bleeding_key == DIK_keys.DIK_ESCAPE then
-		preview_bleeding_key = nil
-	end
-	add_bleed_key = ui_mcm.get(id .. "/development/add_bleed_key")
-	if add_bleed_key == DIK_keys.DIK_ESCAPE then
-		add_bleed_key = nil
-	end
-end
-
-local function on_update()
+local function on_actor_on_update()
 	local actor = db.actor
 	if not actor or not actor:alive() then
 		level.remove_pp_effector(PP_BLEED_ID)
@@ -237,8 +210,6 @@ local function on_update()
 		debug_hud_tg = 0
 		return
 	end
-
-	sync_debug()
 
 	local dt = device().time_delta / 1000
 	if is_add_bleed_held() then
@@ -253,11 +224,11 @@ local function on_update()
 
 	local bleeding = actor.bleeding or 0
 
-	if debug_enabled() then
+	if CONFIG.debug_log then
 		local tg = time_global()
 		if tg >= debug_hud_tg then
 			debug_hud_tg = tg + 250
-			log(LOG.STATUS, string.format(
+			log(LOG.BLEED, string.format(
 				"bleeding %.3f tier %d internal %.3f sustain %s",
 				bleeding,
 				get_bleed_lvl(bleeding),
@@ -271,7 +242,7 @@ local function on_update()
 
 	local lvl = get_bleed_lvl(bleeding)
 	if lvl > last_bleed_lvl then
-		dorn_bleed_fix.play_bleed()
+		play_bleed()
 		play_bleed_sfx()
 		log(LOG.EVENT, string.format("tier %d -> %d (bleeding %.3f, internal %.3f)", last_bleed_lvl, lvl, bleeding, internal_bleed))
 	end
@@ -285,21 +256,19 @@ local function on_update()
 end
 
 local function on_key_press(key)
-	if preview_spike_key and key == preview_spike_key then
-		dorn_bleed_fix.preview_bleed()
-	elseif preview_bleeding_key and key == preview_bleeding_key then
-		dorn_bleed_fix.preview_bleeding()
+	if CONFIG.preview_spike_key and key == CONFIG.preview_spike_key then
+		preview_bleed()
+	elseif CONFIG.preview_bleeding_key and key == CONFIG.preview_bleeding_key then
+		preview_bleeding()
 	end
 end
 
 function on_game_start()
 	snd_bleed = sound_object("dorn_bleed\\bleed")
-	sync_keys()
-	sync_debug()
+	on_option_change()
 	log(LOG.LIFECYCLE, "loaded")
-	RegisterScriptCallback("actor_on_update", on_update)
-	RegisterScriptCallback("on_option_change", sync_debug)
-	RegisterScriptCallback("on_option_change", sync_keys)
+	RegisterScriptCallback("actor_on_update", on_actor_on_update)
+	RegisterScriptCallback("on_option_change", on_option_change)
 	RegisterScriptCallback("on_key_press", on_key_press)
 end
 
@@ -314,8 +283,7 @@ function on_game_end()
 	debug_hud_tg = 0
 	log(LOG.LIFECYCLE, "unloaded")
 	snd_bleed = nil
-	UnregisterScriptCallback("actor_on_update", on_update)
-	UnregisterScriptCallback("on_option_change", sync_debug)
-	UnregisterScriptCallback("on_option_change", sync_keys)
+	UnregisterScriptCallback("actor_on_update", on_actor_on_update)
+	UnregisterScriptCallback("on_option_change", on_option_change)
 	UnregisterScriptCallback("on_key_press", on_key_press)
 end
