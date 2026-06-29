@@ -1,0 +1,328 @@
+--[[
+	Dorn's Bleed Fix
+	- dorn_bleed.ppe: one-shot when bleed tier increases
+	- dorn_bleeding.ppe: looped while bleed tier >= 1
+	- Smoothed internal bleed drives 0-1 PPE intensity for both effects
+]]
+
+local id = "dorn_bleed_fix"
+local PP_BLEED_ID = 22100
+local PP_BLEEDING_ID = 22101
+local PP_BLEED_DBG_ID = 22102
+local PP_BLEEDING_DBG_ID = 22103
+local BLEED_MAX = 1.5
+local BLEED_TIER_STEP = 0.5
+local BLEED_ADD_RATE = BLEED_TIER_STEP
+local BLEED_SPEED_K = 0.88
+local DEBUG_BLEED_BONE = 0
+
+_G.dorn_bleed_fix = _G.dorn_bleed_fix or {}
+local dorn_bleed_fix = _G.dorn_bleed_fix
+
+local last_bleed_lvl = 0
+local internal_bleed = 0
+local sustain_active = false
+local preview_spike_key = nil
+local preview_bleeding_key = nil
+local add_bleed_key = nil
+local add_bleed_log_tg = 0
+local debug_hud_tg = 0
+local snd_bleed = nil
+
+local LOG = {
+	LIFECYCLE = { order = 0, color = "gray" },
+	STATUS    = { order = 1, color = "red" },
+	EVENT     = { order = 2, color = "yellow" },
+}
+
+local function dbg()
+	return _G.dorn_dbg
+end
+
+local function debug_enabled()
+	local mcm = _G.dorn_mcm or dorn_mcm
+	return mcm and mcm.bool(id, "development/debug_log", false)
+end
+
+local function log(log_type, msg)
+	local d = dbg()
+	if d then
+		local slot = log_type or LOG.EVENT
+		d.write(id, slot.order, "[BleedFix] " .. tostring(msg), d.COLORS[slot.color])
+	end
+end
+
+local function get_bleed_lvl(bleeding)
+	if not bleeding or bleeding <= 0 then
+		return 0
+	end
+	if bleeding >= 1.5 then
+		return 4
+	end
+	if bleeding >= 1.0 then
+		return 3
+	end
+	if bleeding >= 0.5 then
+		return 2
+	end
+	return 1
+end
+
+local function mcm_scale(key)
+	if dorn_mcm then
+		return dorn_mcm.number(id, "main/" .. key, 1)
+	end
+	return 1
+end
+
+local function sfx_enabled()
+	return not dorn_mcm or dorn_mcm.bool(id, "main/sfx_on_bleed_up", true)
+end
+
+local function bleed_intensity_01()
+	local intensity = internal_bleed / BLEED_MAX
+	if intensity > 1 then
+		intensity = 1
+	end
+	if intensity < 0 then
+		intensity = 0
+	end
+	return intensity
+end
+
+local function ppe_factor(scale_key)
+	local factor = bleed_intensity_01() * mcm_scale(scale_key)
+	if factor > 1 then
+		factor = 1
+	end
+	if factor < 0 then
+		factor = 0
+	end
+	return factor
+end
+
+local function update_internal_bleed(target, dt_ms)
+	local dt = (dt_ms or 0) / 1000
+	if dt <= 0 then
+		return
+	end
+	local max_step = dt
+	local diff = target - internal_bleed
+	if math.abs(diff) <= max_step then
+		internal_bleed = target
+	else
+		internal_bleed = internal_bleed + (diff > 0 and max_step or -max_step)
+	end
+end
+
+local function is_add_bleed_held()
+	if not add_bleed_key then
+		return false
+	end
+	return (key_state(add_bleed_key) or 0) ~= 0
+end
+
+local function apply_debug_bleed(actor, dt)
+	local actor_obj = actor:cast_Actor()
+	if not actor_obj then
+		return
+	end
+	local cond = actor_obj:conditions()
+	if not cond or dt <= 0 then
+		return
+	end
+	local wound_power = (BLEED_ADD_RATE / BLEED_SPEED_K) * dt
+	if wound_power > 0 then
+		cond:AddWound(wound_power, hit.wound, DEBUG_BLEED_BONE)
+	end
+end
+
+local function play_bleed_sfx()
+	if not sfx_enabled() or not snd_bleed or not db.actor then
+		return
+	end
+	snd_bleed:play_no_feedback(db.actor, sound_object.s2d, 0, VEC_ZERO, 1.0, 1.0)
+end
+
+function dorn_bleed_fix.preview_bleed()
+	if not db.actor then
+		return
+	end
+	local factor = mcm_scale("bleed_intensity_scale")
+	level.remove_pp_effector(PP_BLEED_DBG_ID)
+	level.add_pp_effector("dorn_bleed.ppe", PP_BLEED_DBG_ID, false)
+	level.set_pp_effector_factor(PP_BLEED_DBG_ID, factor)
+	log(LOG.EVENT, "preview_bleed")
+end
+
+function dorn_bleed_fix.preview_bleeding()
+	if not db.actor then
+		return
+	end
+	local factor = mcm_scale("bleeding_intensity_scale")
+	level.remove_pp_effector(PP_BLEEDING_DBG_ID)
+	level.add_pp_effector("dorn_bleeding.ppe", PP_BLEEDING_DBG_ID, false)
+	level.set_pp_effector_factor(PP_BLEEDING_DBG_ID, factor)
+	log(LOG.EVENT, "preview_bleeding")
+end
+
+function dorn_bleed_fix.play_bleed(factor)
+	if not db.actor then
+		return
+	end
+	level.remove_pp_effector(PP_BLEED_ID)
+	level.add_pp_effector("dorn_bleed.ppe", PP_BLEED_ID, false)
+	level.set_pp_effector_factor(PP_BLEED_ID, factor or ppe_factor("bleed_intensity_scale"))
+	log(LOG.EVENT, "play_bleed")
+end
+
+function dorn_bleed_fix.play_bleeding(factor)
+	if not db.actor then
+		return
+	end
+	level.remove_pp_effector(PP_BLEEDING_ID)
+	level.add_pp_effector("dorn_bleeding.ppe", PP_BLEEDING_ID, false)
+	sustain_active = false
+	level.set_pp_effector_factor(PP_BLEEDING_ID, factor or ppe_factor("bleeding_intensity_scale"))
+	log(LOG.EVENT, "play_bleeding")
+end
+
+local function stop_sustain()
+	if sustain_active then
+		level.remove_pp_effector(PP_BLEEDING_ID)
+		sustain_active = false
+	end
+end
+
+local function update_sustain(bleeding)
+	local lvl = get_bleed_lvl(bleeding)
+	if lvl < 1 then
+		stop_sustain()
+		return
+	end
+
+	if not sustain_active then
+		level.add_pp_effector("dorn_bleeding.ppe", PP_BLEEDING_ID, true)
+		sustain_active = true
+	end
+	level.set_pp_effector_factor(PP_BLEEDING_ID, ppe_factor("bleeding_intensity_scale"))
+end
+
+local function sync_debug()
+	local d = dbg()
+	if d then
+		d.set_enabled(id, debug_enabled())
+	end
+end
+
+local function sync_keys()
+	if not ui_mcm then
+		return
+	end
+	preview_spike_key = ui_mcm.get(id .. "/development/preview_spike_key")
+	if preview_spike_key == DIK_keys.DIK_ESCAPE then
+		preview_spike_key = nil
+	end
+	preview_bleeding_key = ui_mcm.get(id .. "/development/preview_bleeding_key")
+	if preview_bleeding_key == DIK_keys.DIK_ESCAPE then
+		preview_bleeding_key = nil
+	end
+	add_bleed_key = ui_mcm.get(id .. "/development/add_bleed_key")
+	if add_bleed_key == DIK_keys.DIK_ESCAPE then
+		add_bleed_key = nil
+	end
+end
+
+local function on_update()
+	local actor = db.actor
+	if not actor or not actor:alive() then
+		level.remove_pp_effector(PP_BLEED_ID)
+		stop_sustain()
+		last_bleed_lvl = 0
+		internal_bleed = 0
+		add_bleed_log_tg = 0
+		debug_hud_tg = 0
+		return
+	end
+
+	sync_debug()
+
+	local dt = device().time_delta / 1000
+	if is_add_bleed_held() then
+		apply_debug_bleed(actor, dt)
+		local tg = time_global()
+		if tg >= add_bleed_log_tg then
+			add_bleed_log_tg = tg + 500
+			local bleeding = actor.bleeding or 0
+			log(LOG.EVENT, string.format("add_bleed hold: %.3f (tier %d)", bleeding, get_bleed_lvl(bleeding)))
+		end
+	end
+
+	local bleeding = actor.bleeding or 0
+
+	if debug_enabled() then
+		local tg = time_global()
+		if tg >= debug_hud_tg then
+			debug_hud_tg = tg + 250
+			log(LOG.STATUS, string.format(
+				"bleeding %.3f tier %d internal %.3f sustain %s",
+				bleeding,
+				get_bleed_lvl(bleeding),
+				internal_bleed,
+				sustain_active and "on" or "off"
+			))
+		end
+	end
+
+	update_internal_bleed(bleeding, device().time_delta)
+
+	local lvl = get_bleed_lvl(bleeding)
+	if lvl > last_bleed_lvl then
+		dorn_bleed_fix.play_bleed()
+		play_bleed_sfx()
+		log(LOG.EVENT, string.format("tier %d -> %d (bleeding %.3f, internal %.3f)", last_bleed_lvl, lvl, bleeding, internal_bleed))
+	end
+	if lvl == 0 then
+		last_bleed_lvl = 0
+	else
+		last_bleed_lvl = lvl
+	end
+
+	update_sustain(bleeding)
+end
+
+local function on_key_press(key)
+	if preview_spike_key and key == preview_spike_key then
+		dorn_bleed_fix.preview_bleed()
+	elseif preview_bleeding_key and key == preview_bleeding_key then
+		dorn_bleed_fix.preview_bleeding()
+	end
+end
+
+function on_game_start()
+	snd_bleed = sound_object("dorn_bleed\\bleed")
+	sync_keys()
+	sync_debug()
+	log(LOG.LIFECYCLE, "loaded")
+	RegisterScriptCallback("actor_on_update", on_update)
+	RegisterScriptCallback("on_option_change", sync_debug)
+	RegisterScriptCallback("on_option_change", sync_keys)
+	RegisterScriptCallback("on_key_press", on_key_press)
+end
+
+function on_game_end()
+	level.remove_pp_effector(PP_BLEED_ID)
+	level.remove_pp_effector(PP_BLEED_DBG_ID)
+	level.remove_pp_effector(PP_BLEEDING_DBG_ID)
+	stop_sustain()
+	last_bleed_lvl = 0
+	internal_bleed = 0
+	add_bleed_log_tg = 0
+	debug_hud_tg = 0
+	log(LOG.LIFECYCLE, "unloaded")
+	snd_bleed = nil
+	UnregisterScriptCallback("actor_on_update", on_update)
+	UnregisterScriptCallback("on_option_change", sync_debug)
+	UnregisterScriptCallback("on_option_change", sync_keys)
+	UnregisterScriptCallback("on_key_press", on_key_press)
+end

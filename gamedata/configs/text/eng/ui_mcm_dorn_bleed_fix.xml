@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<string_table>
+	<string id="ui_mcm_menu_dorn_bleed_fix">
+		<text>Dorn's Bleed Fix</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_main_description">
+		<text>Spike: dorn_bleed.ppe when bleed tier worsens. Sustained: dorn_bleeding.ppe while tier 1 or higher. Intensity follows a smoothed bleed value (0-1). Stock hit blood splashes are unchanged.</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_bleed_intensity_scale">
+		<text>Spike effect intensity (dorn_bleed.ppe)</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_bleed_intensity_scale_desc">
+		<text>User scale for the wound spike postprocess (0-1). Multiplied by smoothed bleed intensity.</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_bleeding_intensity_scale">
+		<text>Sustained effect intensity (dorn_bleeding.ppe)</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_bleeding_intensity_scale_desc">
+		<text>User scale for the sustained bleed overlay (0-1). Multiplied by smoothed bleed intensity.</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_sfx_on_bleed_up">
+		<text>Play sound on bleed tier increase</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_sfx_on_bleed_up_desc">
+		<text>Play dorn_bleed\bleed.ogg when bleed tier goes up.</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_preview_description">
+		<text>Press a key to preview each effect once after editing in the Postprocess Editor. Works even when you are not bleeding.</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_preview_spike_key">
+		<text>Preview spike (dorn_bleed.ppe)</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_preview_spike_key_desc">
+		<text>One-shot wound spike — same as when bleed tier increases.</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_preview_bleeding_key">
+		<text>Preview sustained (dorn_bleeding.ppe)</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_preview_bleeding_key_desc">
+		<text>One-shot preview of the sustained bleed overlay timeline.</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_add_bleed_key">
+		<text>Add bleeding (hold)</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_add_bleed_key_desc">
+		<text>Hold to raise actor bleeding by about one HUD tier per second (0.5 per sec).</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_debug_log">
+		<text>Debug logging (on-screen)</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_debug_log_desc">
+		<text>Print bleed fix state to the on-screen debug log.</text>
+	</string>
+</string_table>

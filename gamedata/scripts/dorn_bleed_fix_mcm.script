@@ -1,0 +1,88 @@
+function on_mcm_load()
+	return {
+		id = "dorn_bleed_fix",
+		text = "Dorn's Bleed Fix",
+		gr = {
+			{
+				id = "main",
+				sh = true,
+				text = "Main",
+				gr = {
+					{
+						id = "main_description",
+						type = "desc",
+						text = "ui_mcm_dorn_bleed_fix_main_description",
+					},
+					{
+						id = "bleed_intensity_scale",
+						type = "track",
+						val = 2,
+						min = 0,
+						max = 1,
+						step = 0.05,
+						def = 1,
+						hint = "dorn_bleed_fix_bleed_intensity_scale",
+					},
+					{
+						id = "bleeding_intensity_scale",
+						type = "track",
+						val = 2,
+						min = 0,
+						max = 1,
+						step = 0.05,
+						def = 1,
+						hint = "dorn_bleed_fix_bleeding_intensity_scale",
+					},
+					{
+						id = "sfx_on_bleed_up",
+						type = "check",
+						val = 1,
+						def = true,
+						hint = "dorn_bleed_fix_sfx_on_bleed_up",
+					},
+				},
+			},
+			{
+				id = "development",
+				sh = true,
+				text = "Development",
+				gr = {
+					{
+						id = "preview_description",
+						type = "desc",
+						text = "ui_mcm_dorn_bleed_fix_preview_description",
+					},
+					{
+						id = "preview_spike_key",
+						type = "key_bind",
+						val = 2,
+						def = DIK_keys.DIK_ESCAPE,
+						hint = "dorn_bleed_fix_preview_spike_key",
+					},
+					{
+						id = "preview_bleeding_key",
+						type = "key_bind",
+						val = 2,
+						def = DIK_keys.DIK_ESCAPE,
+						hint = "dorn_bleed_fix_preview_bleeding_key",
+					},
+					{
+						id = "add_bleed_key",
+						type = "key_bind",
+						val = 2,
+						def = DIK_keys.DIK_ESCAPE,
+						hint = "dorn_bleed_fix_add_bleed_key",
+					},
+					{ id = "line_debug", type = "line" },
+					{
+						id = "debug_log",
+						type = "check",
+						val = 1,
+						def = false,
+						hint = "dorn_bleed_fix_debug_log",
+					},
+				},
+			},
+		},
+	}
+end

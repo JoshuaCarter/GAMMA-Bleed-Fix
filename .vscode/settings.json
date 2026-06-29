@@ -1,0 +1,15 @@
+// <workspace>.code-workspace
+// settings.json
+{
+    "Lua.workspace.library": [
+        "C:/gamma_dev/anomaly-definitions/library",
+        "C:/gamma_dev/xray-lua-definitions/library"
+    ],
+    "Lua.workspace.ignoreSubmodules": false,
+    "Lua.diagnostics.disable": [
+      "lowercase-global",
+      "undefined-global"
+    ],
+    "Lua.runtime.plugin": "C:/gamma_dev/anomaly-definitions/plugin.lua",
+    "Lua.runtime.version": "Lua 5.1",
+  }
