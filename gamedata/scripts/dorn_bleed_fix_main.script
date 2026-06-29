@@ -30,25 +30,19 @@ local debug_hud_tg = 0
 local snd_bleed = nil
 
 local LOG = {
-	LIFECYCLE = { order = 0, color = "gray" },
-	STATUS    = { order = 1, color = "red" },
-	EVENT     = { order = 2, color = "yellow" },
+	LIFECYCLE = { order = 0, color = _G.dorn_dbg.COLORS.gray },
+	STATUS    = { order = 1, color = _G.dorn_dbg.COLORS.red },
+	EVENT     = { order = 2, color = _G.dorn_dbg.COLORS.yellow },
 }
 
-local function dbg()
-	return _G.dorn_dbg
-end
-
 local function debug_enabled()
-	local mcm = _G.dorn_mcm or dorn_mcm
-	return mcm and mcm.bool(id, "development/debug_log", false)
+	return _G.dorn_mcm and _G.dorn_mcm.bool(id, "development/debug_log", false)
 end
 
 local function log(log_type, msg)
-	local d = dbg()
-	if d then
+	if _G.dorn_dbg then
 		local slot = log_type or LOG.EVENT
-		d.write(id, slot.order, "[BleedFix] " .. tostring(msg), d.COLORS[slot.color])
+		_G.dorn_dbg.write(id, slot.order, "[BleedFix] " .. tostring(msg), slot.color)
 	end
 end
 
@@ -69,14 +63,14 @@ local function get_bleed_lvl(bleeding)
 end
 
 local function mcm_scale(key)
-	if dorn_mcm then
-		return dorn_mcm.number(id, "main/" .. key, 1)
+	if _G.dorn_mcm then
+		return _G.dorn_mcm.number(id, "main/" .. key, 1)
 	end
 	return 1
 end
 
 local function sfx_enabled()
-	return not dorn_mcm or dorn_mcm.bool(id, "main/sfx_on_bleed_up", true)
+	return not _G.dorn_mcm or _G.dorn_mcm.bool(id, "main/sfx_on_bleed_up", true)
 end
 
 local function bleed_intensity_01()
@@ -209,9 +203,8 @@ local function update_sustain(bleeding)
 end
 
 local function sync_debug()
-	local d = dbg()
-	if d then
-		d.set_enabled(id, debug_enabled())
+	if _G.dorn_dbg then
+		_G.dorn_dbg.set_enabled(id, debug_enabled())
 	end
 end
 
