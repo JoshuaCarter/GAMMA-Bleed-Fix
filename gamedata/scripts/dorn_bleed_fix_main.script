@@ -137,7 +137,6 @@ local function on_option_change()
 		CONFIG.bleeding_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleeding_intensity_scale", 1)
 		CONFIG.sfx_on_bleed_up = _G.dorn_mcm.bool(MOD_ID, "main/sfx_on_bleed_up", true)
 		CONFIG.preview_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleed_key")
-			or _G.dorn_mcm.key(MOD_ID, "development/preview_spike_key")
 		CONFIG.preview_bleeding_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleeding_key")
 		CONFIG.add_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/add_bleed_key")
 	end

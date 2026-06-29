@@ -50,18 +50,21 @@ function on_mcm_load()
 						id = "preview_bleed_key",
 						type = "key_bind",
 						val = 2,
+						def = -1,
 						hint = "dorn_bleed_fix_preview_bleed_key",
 					},
 					{
 						id = "preview_bleeding_key",
 						type = "key_bind",
 						val = 2,
+						def = -1,
 						hint = "dorn_bleed_fix_preview_bleeding_key",
 					},
 					{
 						id = "add_bleed_key",
 						type = "key_bind",
 						val = 2,
+						def = -1,
 						hint = "dorn_bleed_fix_add_bleed_key",
 					},
 					{
