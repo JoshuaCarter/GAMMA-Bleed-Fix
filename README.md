@@ -19,8 +19,10 @@ The refresh key replays the effect immediately so you can iterate without reload
 ## Installation
 
 1. Install with Mod Organizer 2 like any other mod
-2. **Requires [000-Dorns Common](https://github.com/JoshuaCarter/dorn-common)** — enable it **above** this mod in load order
+2. **Requires [000-Dorns Common](https://github.com/JoshuaCarter/dorn-common/releases)** — enable it **above** this mod in load order
 3. Place below mods that change player visual effects if you see conflicts
+
+Releases: https://github.com/JoshuaCarter/GAMMA-Bleed-Fix/releases
 
 ## Files
 
