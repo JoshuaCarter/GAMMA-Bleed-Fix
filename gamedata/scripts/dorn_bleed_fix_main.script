@@ -145,28 +145,19 @@ local function on_option_change()
 	end
 end
 
-
 function on_game_start()
-	log(LOG.LIFECYCLE, "loaded")
-	sfx_bleed = sound_object("dorn_bleed\\bleed")
-	RegisterScriptCallback("actor_on_update", on_actor_on_update)
-	RegisterScriptCallback("on_option_change", on_option_change)
-	RegisterScriptCallback("on_key_press", on_key_press)
-	on_option_change()
-end
-
-function on_game_end()
 	last_bleed_lvl = 0
 	internal_bleed = 0
 	bleeding_fx_active = false
-	sfx_bleed = nil
 	level.remove_pp_effector(PP_BLEED_ID)
 	level.remove_pp_effector(PP_BLEEDING_ID)
 	level.remove_pp_effector(PP_BLEED_DBG_ID)
 	level.remove_pp_effector(PP_BLEEDING_DBG_ID)
-	UnregisterScriptCallback("actor_on_update", on_actor_on_update)
-	UnregisterScriptCallback("on_option_change", on_option_change)
-	UnregisterScriptCallback("on_key_press", on_key_press)
-	log(LOG.LIFECYCLE, "unloaded")
+	sfx_bleed = sound_object("dorn_bleed\\bleed")
+	on_option_change()
+	RegisterScriptCallback("actor_on_update", on_actor_on_update)
+	RegisterScriptCallback("on_option_change", on_option_change)
+	RegisterScriptCallback("on_key_press", on_key_press)
+	log(LOG.LIFECYCLE, "loaded")
 end
 
