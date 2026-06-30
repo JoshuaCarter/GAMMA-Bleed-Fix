@@ -42,6 +42,17 @@ local function log(log_type, msg)
 	end
 end
 
+local function on_option_change()
+	CONFIG.debug_log = _G.dorn_mcm.bool(MOD_ID, "development/debug_log", false)
+	CONFIG.bleed_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleed_intensity_scale", 1)
+	CONFIG.bleeding_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleeding_intensity_scale", 1)
+	CONFIG.sfx_on_bleed_up = _G.dorn_mcm.bool(MOD_ID, "main/sfx_on_bleed_up", true)
+	CONFIG.preview_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleed_key")
+	CONFIG.preview_bleeding_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleeding_key")
+	CONFIG.add_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/add_bleed_key")
+	_G.dorn_dbg.set_enabled(MOD_ID, CONFIG.debug_log)
+end
+
 local function dt()
 	if device() and device().time_delta then
 		return device().time_delta / 1000
@@ -66,10 +77,16 @@ local function get_bleed_lvl(bleeding)
 end
 
 local function on_actor_on_update()
-	local actor = db.actor
-	if not actor or not actor:alive() then
+	local _, actor = _G.dorn_sys.ready(MOD_ID, db, on_option_change)
+	if not actor then
+		return
+	end
+
+	if not actor:alive() then
 		level.remove_pp_effector(PP_BLEED_ID)
 		level.remove_pp_effector(PP_BLEEDING_ID)
+		level.remove_pp_effector(PP_BLEED_DBG_ID)
+		level.remove_pp_effector(PP_BLEEDING_DBG_ID)
 		last_bleed_lvl = 0
 		internal_bleed = 0
 		bleeding_fx_active = false
@@ -89,20 +106,20 @@ local function on_actor_on_update()
 		internal_bleed = internal_bleed + dt() * 50
 	end
 	internal_bleed = math.max(0, math.min(internal_bleed, BLEED_MAX))
-	log(LOG.BLEED, string.format("Bleeding: %d / %d", bleeding, internal_bleed))
+	log(LOG.BLEED, string.format("Bleeding: %.2f / %.2f", bleeding, internal_bleed))
 
 	-- update bleed level
 	local lvl = get_bleed_lvl(bleeding)
 	if lvl > last_bleed_lvl then
 		-- play bleed effect
 		local base_intensity = math.max(0, math.min(internal_bleed / BLEED_MAX, 1))
-		local final_intensity = base_intensity *  CONFIG.bleed_intensity_scale
+		local final_intensity = base_intensity * CONFIG.bleed_intensity_scale
 
 		level.add_pp_effector("dorn_bleed.ppe", PP_BLEED_ID, false)
 		level.set_pp_effector_factor(PP_BLEED_ID, final_intensity)
 
 		if CONFIG.sfx_on_bleed_up and sfx_bleed then
-			sfx_bleed:play_no_feedback(db.actor, sound_object.s2d, 0, VEC_ZERO, 1.0, 1.0)
+			sfx_bleed:play_no_feedback(actor, sound_object.s2d, 0, VEC_ZERO, 1.0, 1.0)
 		end
 	end
 	last_bleed_lvl = lvl
@@ -130,34 +147,13 @@ local function on_key_press(key)
 	end
 end
 
-local function on_option_change()
-	if _G.dorn_mcm then
-		CONFIG.debug_log = _G.dorn_mcm.bool(MOD_ID, "development/debug_log", false)
-		CONFIG.bleed_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleed_intensity_scale", 1)
-		CONFIG.bleeding_intensity_scale = _G.dorn_mcm.number(MOD_ID, "main/bleeding_intensity_scale", 1)
-		CONFIG.sfx_on_bleed_up = _G.dorn_mcm.bool(MOD_ID, "main/sfx_on_bleed_up", true)
-		CONFIG.preview_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleed_key")
-		CONFIG.preview_bleeding_key = _G.dorn_mcm.key(MOD_ID, "development/preview_bleeding_key")
-		CONFIG.add_bleed_key = _G.dorn_mcm.key(MOD_ID, "development/add_bleed_key")
-	end
-	if _G.dorn_dbg then
-		_G.dorn_dbg.set_enabled(MOD_ID, CONFIG.debug_log)
-	end
-end
-
 function on_game_start()
 	last_bleed_lvl = 0
 	internal_bleed = 0
 	bleeding_fx_active = false
-	level.remove_pp_effector(PP_BLEED_ID)
-	level.remove_pp_effector(PP_BLEEDING_ID)
-	level.remove_pp_effector(PP_BLEED_DBG_ID)
-	level.remove_pp_effector(PP_BLEEDING_DBG_ID)
 	sfx_bleed = sound_object("dorn_bleed\\bleed")
-	on_option_change()
 	RegisterScriptCallback("actor_on_update", on_actor_on_update)
 	RegisterScriptCallback("on_option_change", on_option_change)
 	RegisterScriptCallback("on_key_press", on_key_press)
 	log(LOG.LIFECYCLE, "loaded")
 end
-
