@@ -6,9 +6,9 @@
 ]]
 
 local MOD_ID = "dorn_bleed_fix"
+local COMMON = "dorn_common_e96dd465" -- bump via sync-dorn-common.sh
 
-process_file("dorn_bleed_fix_common")
-local DORN = dorn_bleed_fix_common.get()
+local DORN
 
 local PP_BLEED_ID = 22100
 local PP_BLEEDING_ID = 22101
@@ -151,7 +151,7 @@ local function on_key_press(key)
 end
 
 function on_game_start()
-	dorn_bleed_fix_common.init(MOD_ID)
+	DORN = _G[COMMON].load(MOD_ID)
 
 	last_bleed_lvl = 0
 	internal_bleed = 0
