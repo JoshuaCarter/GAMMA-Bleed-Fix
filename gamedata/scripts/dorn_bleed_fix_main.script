@@ -45,7 +45,7 @@ local function log(log_type, msg)
 	end
 	local slot = log_type or LOG.EVENT
 	if CONFIG.debug_overlay then
-		DORN.dbg.overlay(MOD_ID, slot.order, "[BleedFix] " .. tostring(msg), slot.color)
+		DORN.dbg.overlay(MOD_ID, slot.order, tostring(msg), slot.color)
 	end
 	if CONFIG.debug_log then
 		DORN.dbg.log(MOD_ID, tostring(msg))
