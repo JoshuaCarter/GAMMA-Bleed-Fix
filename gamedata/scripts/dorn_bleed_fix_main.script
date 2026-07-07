@@ -6,7 +6,7 @@
 ]]
 
 local MOD_ID = "dorn_bleed_fix"
-local DORN_COMMON_VERSION = "dorn_common_7367f5e7" -- managed by sync-dorn-common.sh, do not hand-edit
+local DORN_COMMON_VERSION = "dorn_common_3ea88f51" -- managed by sync-dorn-common.sh, do not hand-edit
 
 local DORN
 
@@ -23,6 +23,7 @@ local sfx_bleed = nil
 
 local CONFIG = {
 	debug_log = false,
+	debug_overlay = false,
 	bleed_intensity_scale = 1,
 	bleeding_intensity_scale = 1,
 	sfx_on_bleed_up = true,
@@ -39,21 +40,28 @@ local LOG = {
 }
 
 local function log(log_type, msg)
-	if DORN.dbg and CONFIG.debug_log then
-		local slot = log_type or LOG.EVENT
-		DORN.dbg.write(MOD_ID, slot.order, "[BleedFix] " .. tostring(msg), slot.color)
+	if not DORN.dbg then
+		return
+	end
+	local slot = log_type or LOG.EVENT
+	if CONFIG.debug_overlay then
+		DORN.dbg.overlay(MOD_ID, slot.order, "[BleedFix] " .. tostring(msg), slot.color)
+	end
+	if CONFIG.debug_log then
+		DORN.dbg.log(MOD_ID, tostring(msg))
 	end
 end
 
 local function on_option_change()
 	CONFIG.debug_log = DORN.mcm.bool(MOD_ID, "development/debug_log", false)
+	CONFIG.debug_overlay = DORN.mcm.bool(MOD_ID, "development/debug_overlay", false)
 	CONFIG.bleed_intensity_scale = DORN.mcm.number(MOD_ID, "main/bleed_intensity_scale", 1)
 	CONFIG.bleeding_intensity_scale = DORN.mcm.number(MOD_ID, "main/bleeding_intensity_scale", 1)
 	CONFIG.sfx_on_bleed_up = DORN.mcm.bool(MOD_ID, "main/sfx_on_bleed_up", true)
 	CONFIG.preview_bleed_key = DORN.mcm.key(MOD_ID, "development/preview_bleed_key")
 	CONFIG.preview_bleeding_key = DORN.mcm.key(MOD_ID, "development/preview_bleeding_key")
 	CONFIG.add_bleed_key = DORN.mcm.key(MOD_ID, "development/add_bleed_key")
-	DORN.dbg.set_enabled(MOD_ID, CONFIG.debug_log)
+	DORN.dbg.set_enabled(MOD_ID, CONFIG.debug_overlay)
 end
 
 local function dt()

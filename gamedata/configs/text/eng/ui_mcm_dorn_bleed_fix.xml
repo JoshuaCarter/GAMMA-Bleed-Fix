@@ -33,10 +33,16 @@
 	<string id="ui_mcm_dorn_bleed_fix_add_bleed_key">
 		<text>Add bleeding (hold)</text>
 	</string>
+	<string id="ui_mcm_dorn_bleed_fix_debug_overlay">
+		<text>Enable debug overlay</text>
+	</string>
+	<string id="ui_mcm_dorn_bleed_fix_debug_overlay_desc">
+		<text>Show bleed fix state in the debug overlay.</text>
+	</string>
 	<string id="ui_mcm_dorn_bleed_fix_debug_log">
-		<text>Debug log</text>
+		<text>Enable debug logging</text>
 	</string>
 	<string id="ui_mcm_dorn_bleed_fix_debug_log_desc">
-		<text>Print bleed fix state to the on-screen debug log.</text>
+		<text>Write bleed fix state to the game log file.</text>
 	</string>
 </string_table>
