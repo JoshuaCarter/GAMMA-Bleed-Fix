@@ -39,13 +39,21 @@ local LOG = {
 	EVENT     = { order = 3, color = "yellow" },
 }
 
-local function log(log_type, msg)
+-- HUD-only: for values that change every frame (bleeding amount/level).
+local function overlay(log_type, msg)
 	if not DORN.dbg then
 		return
 	end
-	local slot = log_type or LOG.EVENT
 	if CONFIG.debug_overlay then
+		local slot = log_type or LOG.EVENT
 		DORN.dbg.overlay(MOD_ID, slot.order, tostring(msg), slot.color)
+	end
+end
+
+-- File-only: for one-off/lifecycle events worth keeping in the log.
+local function log(msg)
+	if not DORN.dbg then
+		return
 	end
 	if CONFIG.debug_log then
 		DORN.dbg.log(MOD_ID, tostring(msg))
@@ -117,7 +125,7 @@ local function on_actor_on_update()
 		internal_bleed = internal_bleed + dt() * 50
 	end
 	internal_bleed = math.max(0, math.min(internal_bleed, BLEED_MAX))
-	log(LOG.BLEED, string.format("Bleeding: %.2f / %.2f", bleeding, internal_bleed))
+	overlay(LOG.BLEED, string.format("Bleeding: %.2f / %.2f", bleeding, internal_bleed))
 
 	-- update bleed level
 	local lvl = get_bleed_lvl(bleeding)
@@ -134,7 +142,7 @@ local function on_actor_on_update()
 		end
 	end
 	last_bleed_lvl = lvl
-	log(LOG.BLEED_LVL, string.format("Bleed level: %d", lvl))
+	overlay(LOG.BLEED_LVL, string.format("Bleed level: %d", lvl))
 
 	-- update bleeding
 	if bleeding_fx_active and lvl < 1 then
@@ -168,5 +176,5 @@ function on_game_start()
 	RegisterScriptCallback("actor_on_update", on_actor_on_update)
 	RegisterScriptCallback("on_option_change", on_option_change)
 	RegisterScriptCallback("on_key_press", on_key_press)
-	log(LOG.LIFECYCLE, "loaded")
+	log("loaded")
 end
