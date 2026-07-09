@@ -79,22 +79,6 @@ local function dt()
 	return 0
 end
 
-local function get_bleed_lvl(bleeding)
-	if not bleeding or bleeding <= 0 then
-		return 0
-	end
-	if bleeding >= 1.5 then
-		return 4
-	end
-	if bleeding >= 1.0 then
-		return 3
-	end
-	if bleeding >= 0.5 then
-		return 2
-	end
-	return 1
-end
-
 local function on_actor_on_update()
 	local _, actor = DORN.sys.ready(MOD_ID, db, on_option_change)
 	if not actor then
@@ -128,7 +112,18 @@ local function on_actor_on_update()
 	overlay(LOG.BLEED, string.format("Bleeding: %.2f / %.2f", bleeding, internal_bleed))
 
 	-- update bleed level
-	local lvl = get_bleed_lvl(bleeding)
+	local lvl = 0
+	if bleeding > 0 then
+		if bleeding >= 1.5 then
+			lvl = 4
+		elseif bleeding >= 1.0 then
+			lvl = 3
+		elseif bleeding >= 0.5 then
+			lvl = 2
+		else
+			lvl = 1
+		end
+	end
 	if lvl > last_bleed_lvl then
 		-- play bleed effect
 		local base_intensity = math.max(0, math.min(internal_bleed / BLEED_MAX, 1))

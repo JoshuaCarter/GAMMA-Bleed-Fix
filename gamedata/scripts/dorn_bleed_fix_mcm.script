@@ -1,7 +1,7 @@
 function on_mcm_load()
 	return {
 		id = "dorn_bleed_fix",
-		text = "Dorn's Bleed Fix",
+		text = "ui_mcm_menu_dorn_bleed_fix",
 		gr = {
 			{
 				id = "main",
