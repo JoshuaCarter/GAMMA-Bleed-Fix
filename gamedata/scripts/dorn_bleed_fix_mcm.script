@@ -45,6 +45,7 @@ function on_mcm_load()
 			{
 				id = "development",
 				sh = true,
+				text = "Development",
 				gr = {
 					{
 						id = "preview_bleed_key",

@@ -2,6 +2,11 @@
 
 WIP
 
+## Installation
+
+1. Download the latest release from https://github.com/JoshuaCarter/GAMMA-Bleed-Fix/releases
+2. Install via MO2 like normal
+
 ## Other mods
 
 - https://github.com/JoshuaCarter/GAMMA-Dont-ReEquip-PDA

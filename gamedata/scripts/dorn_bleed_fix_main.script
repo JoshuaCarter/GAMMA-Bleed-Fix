@@ -33,7 +33,6 @@ local CONFIG = {
 }
 
 local LOG = {
-	LIFECYCLE = { order = 0, color = "gray" },
 	BLEED     = { order = 1, color = "red" },
 	BLEED_LVL = { order = 2, color = "orange" },
 	EVENT     = { order = 3, color = "yellow" },
