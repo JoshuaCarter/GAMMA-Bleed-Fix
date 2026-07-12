@@ -8,6 +8,7 @@ end
 
 
 
+
 function on_mcm_load()
 	local MCM = dorn_mcm()
 	return {
@@ -51,7 +52,7 @@ function on_mcm_load()
 						def = true,
 						hint = "dorn_bleed_fix_sfx_on_bleed_up",
 					},
-				},
+				}),
 			},
 			{
 				id = "development",
@@ -93,7 +94,7 @@ function on_mcm_load()
 						def = false,
 						hint = "dorn_bleed_fix_debug_log",
 					},
-				},
+				}),
 			},
 		},
 	}
